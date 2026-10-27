@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>戦術対抗戦ログ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef2fb; --surface:#ffffff; --surface-2:#f5f7fd;
+  --ink:#1c2440; --ink-soft:#5b6483; --line:#dbe2f3;
+  --navy:#1f3a7a; --navy-deep:#14235a; --sky:#4d7cf0;
+  --win:#1f8a5f; --win-bg:#e3f6ec;
+  --lose:#c23b4f; --lose-bg:#fbe6e9;
+  --radius:14px;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1224; --surface:#161d38; --surface-2:#1c2445;
+    --ink:#e8ecfb; --ink-soft:#9aa4cc; --line:#2b3568;
+    --navy:#6f92f5; --navy-deep:#8fa9ff; --sky:#7ba0ff;
+    --win:#57d69b; --win-bg:#123328;
+    --lose:#ff8b98; --lose-bg:#3a1720;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1224; --surface:#161d38; --surface-2:#1c2445;
+  --ink:#e8ecfb; --ink-soft:#9aa4cc; --line:#2b3568;
+  --navy:#6f92f5; --navy-deep:#8fa9ff; --sky:#7ba0ff;
+  --win:#57d69b; --win-bg:#123328;
+  --lose:#ff8b98; --lose-bg:#3a1720;
+}
+*{box-sizing:border-box;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Zen Kaku Gothic New",-apple-system,"Hiragino Sans",sans-serif;
+  min-height:100%;
+}
+header.top{
+  position:sticky; top:0; z-index:20;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) 18px 12px;
+  background:linear-gradient(135deg,var(--navy-deep),var(--navy));
+  color:#fff;
+}
+header.top h1{margin:0; font-size:19px; font-weight:900; letter-spacing:.02em;}
+header.top p{margin:2px 0 0; font-size:12px; color:#cddaff;}
+nav.tabs{
+  display:flex; gap:6px; padding:10px 18px 0;
+  background:linear-gradient(135deg,var(--navy-deep),var(--navy));
+}
+nav.tabs button{
+  flex:1; border:none; background:rgba(255,255,255,.14); color:#eaf0ff;
+  padding:10px 4px; border-radius:12px 12px 0 0; font-size:13px; font-weight:700;
+  font-family:inherit; cursor:pointer;
+}
+nav.tabs button.active{background:var(--bg); color:var(--navy-deep);}
+main{padding:16px 16px 48px; max-width:640px; margin:0 auto;}
+.screen{display:none;}
+.screen.active{display:block;}
+h2.section{font-size:15px; font-weight:700; margin:22px 0 10px; color:var(--navy);}
+h2.section:first-child{margin-top:4px;}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:14px;}
+label{display:block; font-size:12.5px; color:var(--ink-soft); margin:0 0 6px; font-weight:500;}
+input[type=text]{
+  width:100%; padding:11px 12px; border-radius:10px; border:1px solid var(--line);
+  background:var(--surface-2); color:var(--ink); font-family:inherit; font-size:15px;
+}
+input[type=text]:focus{outline:2px solid var(--sky); outline-offset:1px;}
+textarea{
+  width:100%; min-height:76px; padding:11px 12px; border-radius:10px; border:1px solid var(--line);
+  background:var(--surface-2); color:var(--ink); font-family:inherit; font-size:14.5px; resize:vertical;
+}
+.field{margin-bottom:12px;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.slot{
+  width:100%; text-align:left; padding:11px 12px; border-radius:10px; border:1px dashed var(--line);
+  background:var(--surface-2); color:var(--ink); font-family:inherit; font-size:14.5px; cursor:pointer;
+}
+.slot .tag{display:block; font-size:10.5px; color:var(--ink-soft); margin-bottom:2px; font-weight:700;}
+.slot.filled{border-style:solid; border-color:var(--sky);}
+.result-toggle{display:flex; gap:10px;}
+.result-toggle button{
+  flex:1; padding:12px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface-2);
+  font-family:inherit; font-weight:700; font-size:14.5px; color:var(--ink-soft); cursor:pointer;
+}
+.result-toggle button[data-r="win"].on{background:var(--win-bg); border-color:var(--win); color:var(--win);}
+.result-toggle button[data-r="lose"].on{background:var(--lose-bg); border-color:var(--lose); color:var(--lose);}
+.btn-primary{
+  width:100%; padding:14px; margin-top:18px; border:none; border-radius:12px;
+  background:var(--navy); color:#fff; font-family:inherit; font-weight:700; font-size:15.5px; cursor:pointer;
+}
+.btn-secondary{
+  width:100%; padding:12px; margin-top:10px; border:1px solid var(--line); border-radius:12px;
+  background:var(--surface); color:var(--ink-soft); font-family:inherit; font-weight:700; font-size:14px; cursor:pointer;
+}
+.btn-row{display:flex; gap:10px; margin-top:18px;}
+.btn-row .btn-primary,.btn-row .btn-secondary{margin-top:0;}
+.result-list{list-style:none; margin:12px 0 0; padding:0; display:flex; flex-direction:column; gap:10px;}
+.result-item{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:12px 14px; cursor:pointer;
+}
+.result-item .row1{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+.result-item .opp{font-weight:700; font-size:14.5px;}
+.badge{font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px;}
+.badge.win{background:var(--win-bg); color:var(--win);}
+.badge.lose{background:var(--lose-bg); color:var(--lose);}
+.result-item .date{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+.formline{font-size:12.5px; color:var(--ink-soft); margin-top:8px; line-height:1.6;}
+.formline b{color:var(--ink); font-weight:600;}
+.empty{text-align:center; padding:40px 10px; color:var(--ink-soft); font-size:13.5px;}
+.overlay{
+  position:fixed; inset:0; background:rgba(10,14,30,.5); z-index:50; display:none;
+  align-items:flex-end; justify-content:center;
+}
+.overlay.active{display:flex;}
+.sheet{
+  width:100%; max-width:640px; max-height:86vh; background:var(--surface);
+  border-radius:18px 18px 0 0; padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 16px);
+  overflow-y:auto; display:flex; flex-direction:column;
+}
+.sheet-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+.sheet-head h3{margin:0; font-size:15px;}
+.sheet-head button{border:none; background:none; font-size:20px; color:var(--ink-soft); cursor:pointer; padding:4px 8px;}
+.student-row{
+  display:flex; align-items:center; justify-content:space-between; width:100%; padding:12px 6px;
+  border-bottom:1px solid var(--line); background:none; border-left:none; border-right:none; border-top:none;
+  font-family:inherit; font-size:14.5px; color:var(--ink); text-align:left; cursor:pointer;
+}
+.student-row small{color:var(--ink-soft); font-size:11px;}
+.add-custom{padding:12px 6px; color:var(--sky); font-size:13.5px; font-weight:700; cursor:pointer;}
+.detail-row{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px;}
+.detail-row .k{color:var(--ink-soft);}
+.memo-box{background:var(--surface-2); border-radius:10px; padding:10px 12px; font-size:13.5px; margin-top:6px; white-space:pre-wrap;}
+.manage-row{display:flex; align-items:center; justify-content:space-between; padding:9px 2px; border-bottom:1px solid var(--line); font-size:14px;}
+.manage-row small{color:var(--ink-soft); font-size:11px; margin-left:6px;}
+.manage-row button{border:1px solid var(--lose); color:var(--lose); background:none; border-radius:8px; padding:6px 12px; font-family:inherit; font-size:12.5px; font-weight:700; cursor:pointer;}
+.manage-list{max-height:360px; overflow-y:auto; margin-top:8px;}
+.overlay.center{align-items:center; padding:20px; z-index:60;}
+.dialog{width:100%; max-width:360px; background:var(--surface); border-radius:16px; padding:20px;}
+.dialog h3{margin:0 0 8px; font-size:16px;}
+.dialog p{margin:0; font-size:13.5px; color:var(--ink-soft); line-height:1.7;}
+.small-note{font-size:11.5px; color:var(--ink-soft); margin-top:6px; line-height:1.6;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>戦術対抗戦ログ</h1>
+  <p>対戦を記録して、相手編成から過去の自分の編成と勝敗を検索</p>
+</header>
+<nav class="tabs">
+  <button data-tab="record" class="active">対戦を記録</button>
+  <button data-tab="search">対戦を検索</button>
+  <button data-tab="settings">設定</button>
+</nav>
+
+<main>
+
+  <!-- 記録画面 -->
+  <section class="screen active" id="screen-record">
+    <div class="field">
+      <label>相手プレイヤー名（任意）</label>
+      <input type="text" id="rec-opponent" placeholder="例：SuperAlice">
+    </div>
+
+    <h2 class="section">自分の編成</h2>
+    <div class="card">
+      <div class="grid2" id="rec-A"></div>
+      <div class="grid2" style="margin-top:10px" id="rec-ASP"></div>
+    </div>
+
+    <h2 class="section">相手の編成</h2>
+    <div class="card">
+      <div class="grid2" id="rec-D"></div>
+      <div class="grid2" style="margin-top:10px" id="rec-DSP"></div>
+    </div>
+
+    <h2 class="section">勝敗</h2>
+    <div class="result-toggle" id="rec-result">
+      <button type="button" data-r="win">勝利</button>
+      <button type="button" data-r="lose">敗北</button>
+    </div>
+
+    <h2 class="section">戦闘メモ（任意）</h2>
+    <textarea id="rec-memo" placeholder="立ち回りや気づいたことなど"></textarea>
+
+    <button class="btn-primary" id="rec-save">対戦を保存</button>
+  </section>
+
+  <!-- 検索画面 -->
+  <section class="screen" id="screen-search">
+    <div class="field">
+      <label>相手プレイヤー名（完全一致）</label>
+      <input type="text" id="s-opponent" placeholder="例：SuperAlice">
+    </div>
+    <div class="field">
+      <label>戦闘メモ（部分一致・全角スペース区切りですべて含む）</label>
+      <input type="text" id="s-memo" placeholder="例：開幕EX　ミカ">
+    </div>
+    <h2 class="section">相手の編成で絞り込み</h2>
+    <div class="card">
+      <div class="grid2" id="s-D"></div>
+      <div class="grid2" style="margin-top:10px" id="s-DSP"></div>
+      <p class="small-note">SPは配置順を区別しません。2枠とも指定すると組み合わせ一致、片方だけ指定するとどちらかの枠にいれば一致します。</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="s-go">検索</button>
+      <button class="btn-secondary" id="s-clear">条件をクリア</button>
+    </div>
+
+    <h2 class="section">検索結果</h2>
+    <ul class="result-list" id="s-results"></ul>
+  </section>
+
+  <!-- 設定画面 -->
+  <section class="screen" id="screen-settings">
+    <h2 class="section">データ</h2>
+    <div class="card">
+      <p class="small-note" style="margin-top:0">記録した対戦データと生徒リストは、この端末のブラウザ（localStorage）にのみ保存されます。ブラウザのデータを消去したり、別の端末・別のブラウザで開いたりすると、データは引き継がれません。</p>
+    </div>
+    <h2 class="section">登録済み対戦データ</h2>
+    <div class="card">
+      <input type="text" id="match-manage-search" placeholder="相手名で絞り込み">
+      <div class="manage-list" id="match-manage-list"></div>
+      <p class="small-note">削除した対戦データは元に戻せません。</p>
+    </div>
+    <h2 class="section">登録済み生徒</h2>
+    <div class="card">
+      <p class="small-note" style="margin-top:0">生徒一覧はよく使われる生徒のサンプルです。編成選択画面の検索で見つからない場合は、その場で新しい生徒を追加できます。</p>
+      <div id="settings-count" class="small-note"></div>
+      <input type="text" id="manage-search" placeholder="生徒名で絞り込み" style="margin-top:10px">
+      <div class="manage-list" id="manage-list"></div>
+      <p class="small-note">生徒を削除しても、過去に記録した対戦データの編成は変わりません。削除した生徒は、編成選択画面から新規追加すればいつでも登録し直せます。</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- 生徒削除の確認ダイアログ -->
+<div class="overlay center" id="confirm-overlay">
+  <div class="dialog">
+    <h3 id="confirm-title">生徒を削除しますか？</h3>
+    <p id="confirm-text"></p>
+    <div class="btn-row">
+      <button class="btn-secondary" id="confirm-cancel">キャンセル</button>
+      <button class="btn-primary" style="background:var(--lose)" id="confirm-ok">削除する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 生徒選択シート -->
+<div class="overlay" id="picker-overlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3 id="picker-title">生徒を選択</h3>
+      <button id="picker-close">✕</button>
+    </div>
+    <input type="text" id="picker-search" placeholder="生徒名で検索">
+    <div id="picker-list" style="margin-top:6px;"></div>
+  </div>
+</div>
+
+<!-- 対戦詳細シート -->
+<div class="overlay" id="detail-overlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3>対戦詳細</h3>
+      <button id="detail-close">✕</button>
+    </div>
+    <div id="detail-body"></div>
+    <div class="btn-row">
+      <button class="btn-secondary" id="detail-edit">編集</button>
+      <button class="btn-primary" style="background:var(--lose)" id="detail-delete">削除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+// ---- 生徒マスターデータ（サンプル。設定画面から追加可能） ----
+var DEFAULT_STUDENTS = [
+  ["ホシノ","striker"],["ユウカ","striker"],["ヒビキ","striker"],["ミカ","striker"],
+  ["アズサ","striker"],["イズナ","striker"],["シロコ","striker"],["セリカ","striker"],
+  ["ジュリ","striker"],["カヨコ","striker"],["モモイ","striker"],["ネル","striker"],
+  ["フブキ","striker"],["カリン","striker"],["アル","striker"],["イオリ","striker"],
+  ["ツルギ","striker"],["ミサキ","striker"],["カズサ","striker"],["ワカモ","striker"],
+  ["コタマ","striker"],["イズミ","striker"],["スミレ","striker"],["ムツキ","striker"],
+  ["シュン","striker"],["ハナコ","striker"],["キョウカ","striker"],["ハルナ","striker"],
+  ["ウタハ","striker"],["サオリ","striker"],["コハル","striker"],["チセ","striker"],
+  ["ヒヨリ","striker"],["ミヤコ","striker"],["ノゾミ","striker"],["アコ","special"],
+  ["ヒマリ","special"],["ヒフミ","special"],["ハレ","special"],["イロハ","special"],
+  ["マキ","special"],["ユズ","special"],["ノノミ","special"],["ジュンコ","special"],
+  ["レイサ","special"],["ミユ","special"],["サコ","special"],["ミネ","special"],
+  ["ナギサ","special"],["エイミ","special"]
+];
+
+// ---- 生徒リストの保存（localStorage） ----
+// custom: 追加した生徒 [[名前, 区分]] / deleted: 削除した生徒名
+var prefs = {custom:[], deleted:[]};
+try{ prefs.custom = JSON.parse(localStorage.getItem('ta_students_custom')||'[]'); }catch(e){}
+try{ prefs.deleted = JSON.parse(localStorage.getItem('ta_students_deleted')||'[]'); }catch(e){}
+if(!Array.isArray(prefs.custom)) prefs.custom = [];
+if(!Array.isArray(prefs.deleted)) prefs.deleted = [];
+
+function savePrefs(){
+  try{
+    localStorage.setItem('ta_students_custom', JSON.stringify(prefs.custom));
+    localStorage.setItem('ta_students_deleted', JSON.stringify(prefs.deleted));
+  }catch(e){
+    alert('この端末のブラウザに保存できませんでした。プライベートモードや保存領域の設定を確認してください。');
+  }
+}
+
+function loadDeleted(){ return prefs.deleted; }
+function deleteStudent(name){
+  if(prefs.deleted.indexOf(name)<0) prefs.deleted.push(name);
+  // 自作追加分は実体も削除
+  prefs.custom = prefs.custom.filter(function(s){ return s[0]!==name; });
+  savePrefs();
+  STUDENTS = loadStudents();
+}
+function loadStudents(){
+  var custom = prefs.custom;
+  var deleted = loadDeleted();
+  var byName = {};
+  var out = [];
+  var id=1;
+  DEFAULT_STUDENTS.concat(custom).forEach(function(s){
+    if(byName[s[0]] || deleted.indexOf(s[0])>=0) return;
+    byName[s[0]]=true;
+    out.push({id:'st'+(id++), name:s[0], type:s[1]});
+  });
+  // Striker → Special の順にグループ分けし、各グループ内を50音順に並べる
+  out.sort(function(a,b){
+    if(a.type!==b.type) return a.type==='striker' ? -1 : 1;
+    return a.name.localeCompare(b.name, 'ja');
+  });
+  return out;
+}
+var STUDENTS = loadStudents();
+
+function addCustomStudent(name, type){
+  prefs.deleted = prefs.deleted.filter(function(n){return n!==name;});
+  prefs.custom.push([name, type]);
+  savePrefs();
+  STUDENTS = loadStudents();
+}
+
+// ---- 対戦データ ----
+function loadMatches(){
+  try{ return JSON.parse(localStorage.getItem('ta_matches')||'[]'); }catch(e){ return []; }
+}
+function saveMatches(list){
+  try{ localStorage.setItem('ta_matches', JSON.stringify(list)); }
+  catch(e){ alert('この端末のブラウザに保存できませんでした。プライベートモードや保存領域の設定を確認してください。'); }
+}
+
+var SLOTS_A = ['A1','A2','A3','A4'];
+var SLOTS_ASP = ['ASP1','ASP2'];
+var SLOTS_D = ['D1','D2','D3','D4'];
+var SLOTS_DSP = ['DSP1','DSP2'];
+
+// 現在編集中フォームの状態
+var recForm = {}; // slot -> studentName
+var searchForm = {}; // slot -> studentName (D/DSP only)
+var editingId = null; // 記録画面が編集モードの場合、対象ID
+var pickerTarget = null; // {form:'rec'|'search', slot:'A1'...}
+
+function studentByName(n){ return STUDENTS.find(function(s){return s.name===n;}); }
+
+// ---- スロットUIの描画 ----
+function slotButton(slot, label, formKey){
+  var btn = document.createElement('button');
+  btn.type='button'; btn.className='slot'; btn.dataset.slot=slot;
+  btn.addEventListener('click', function(){ openPicker(formKey, slot); });
+  renderSlotLabel(btn, slot, label, formKey);
+  return btn;
+}
+function renderSlotLabel(btn, slot, label, formKey){
+  var form = formKey==='rec' ? recForm : searchForm;
+  var val = form[slot];
+  btn.innerHTML = '<span class="tag">'+label+'</span>' + (val ? val : (formKey==='search' ? '指定なし' : '生徒を選択'));
+  btn.classList.toggle('filled', !!val);
+}
+
+function buildRecordSlots(){
+  var a = document.getElementById('rec-A'); a.innerHTML='';
+  SLOTS_A.forEach(function(s){ a.appendChild(slotButton(s, s, 'rec')); });
+  var asp = document.getElementById('rec-ASP'); asp.innerHTML='';
+  SLOTS_ASP.forEach(function(s){ asp.appendChild(slotButton(s, s, 'rec')); });
+  var d = document.getElementById('rec-D'); d.innerHTML='';
+  SLOTS_D.forEach(function(s){ d.appendChild(slotButton(s, s, 'rec')); });
+  var dsp = document.getElementById('rec-DSP'); dsp.innerHTML='';
+  SLOTS_DSP.forEach(function(s){ dsp.appendChild(slotButton(s, s, 'rec')); });
+}
+function buildSearchSlots(){
+  var d = document.getElementById('s-D'); d.innerHTML='';
+  SLOTS_D.forEach(function(s){ d.appendChild(slotButton(s, s, 'search')); });
+  var dsp = document.getElementById('s-DSP'); dsp.innerHTML='';
+  SLOTS_DSP.forEach(function(s){ dsp.appendChild(slotButton(s, s, 'search')); });
+}
+function refreshSlotUI(formKey){
+  var ids = formKey==='rec' ? ['rec-A','rec-ASP','rec-D','rec-DSP'] : ['s-D','s-DSP'];
+  ids.forEach(function(id){
+    document.querySelectorAll('#'+id+' .slot').forEach(function(btn){
+      var slot = btn.dataset.slot;
+      var label = slot;
+      renderSlotLabel(btn, slot, label, formKey);
+    });
+  });
+}
+
+// ---- 生徒選択シート ----
+function openPicker(formKey, slot){
+  pickerTarget = {form:formKey, slot:slot};
+  var isSp = slot.indexOf('SP')>=0;
+  document.getElementById('picker-title').textContent = slot + ' を選択' + (isSp ? '（Special）':'（Striker）');
+  document.getElementById('picker-search').value='';
+  renderPickerList('', isSp, formKey);
+  document.getElementById('picker-overlay').classList.add('active');
+  document.getElementById('picker-search').focus();
+}
+function closePicker(){ document.getElementById('picker-overlay').classList.remove('active'); pickerTarget=null; }
+
+function renderPickerList(query, isSp, formKey){
+  var list = document.getElementById('picker-list'); list.innerHTML='';
+  var q = query.trim();
+  var filtered = STUDENTS.filter(function(s){
+    if(isSp && s.type!=='special') return false;
+    if(!isSp && s.type!=='striker') return false;
+    return q==='' || s.name.indexOf(q)>=0;
+  });
+
+  if(formKey==='search'){
+    var clearRow = document.createElement('button');
+    clearRow.type='button'; clearRow.className='student-row'; clearRow.style.color='var(--ink-soft)';
+    clearRow.textContent='指定なし（クリア）';
+    clearRow.addEventListener('click', function(){ selectStudent(null); });
+    list.appendChild(clearRow);
+  }
+
+  filtered.forEach(function(s){
+    var row = document.createElement('button');
+    row.type='button'; row.className='student-row';
+    row.innerHTML = '<span>'+s.name+'</span><small>'+(s.type==='special'?'Special':'Striker')+'</small>';
+    row.addEventListener('click', function(){ selectStudent(s.name); });
+    list.appendChild(row);
+  });
+
+  if(q!=='' && !filtered.some(function(s){return s.name===q;})){
+    var add = document.createElement('div');
+    add.className='add-custom';
+    add.textContent = '「'+q+'」を'+(isSp?'Special':'Striker')+'として新規追加';
+    add.addEventListener('click', function(){
+      addCustomStudent(q, isSp?'special':'striker');
+      selectStudent(q);
+    });
+    list.appendChild(add);
+  }
+}
+document.getElementById('picker-search').addEventListener('input', function(e){
+  if(!pickerTarget) return;
+  var isSp = pickerTarget.slot.indexOf('SP')>=0;
+  renderPickerList(e.target.value, isSp, pickerTarget.form);
+});
+document.getElementById('picker-close').addEventListener('click', closePicker);
+
+function selectStudent(name){
+  if(!pickerTarget) return;
+  var form = pickerTarget.form==='rec' ? recForm : searchForm;
+  if(name) form[pickerTarget.slot] = name; else delete form[pickerTarget.slot];
+  refreshSlotUI(pickerTarget.form);
+  closePicker();
+}
+
+// ---- 記録画面 ----
+buildRecordSlots();
+document.getElementById('rec-result').addEventListener('click', function(e){
+  var b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#rec-result button').forEach(function(x){x.classList.remove('on');});
+  b.classList.add('on');
+  recForm._result = b.dataset.r;
+});
+
+function resetRecordForm(){
+  recForm = {};
+  editingId = null;
+  document.getElementById('rec-opponent').value='';
+  document.getElementById('rec-memo').value='';
+  document.querySelectorAll('#rec-result button').forEach(function(x){x.classList.remove('on');});
+  document.getElementById('rec-save').textContent='対戦を保存';
+  refreshSlotUI('rec');
+}
+
+document.getElementById('rec-save').addEventListener('click', function(){
+  if(!recForm._result){ alert('勝敗を選択してください'); return; }
+  var matches = loadMatches();
+  var data = {
+    id: editingId || ('m'+Date.now()),
+    recordedAt: editingId ? (matches.find(function(m){return m.id===editingId;})||{}).recordedAt || new Date().toISOString() : new Date().toISOString(),
+    opponentName: document.getElementById('rec-opponent').value.trim(),
+    result: recForm._result,
+    memo: document.getElementById('rec-memo').value.trim(),
+    A1: recForm.A1||'', A2: recForm.A2||'', A3: recForm.A3||'', A4: recForm.A4||'',
+    ASP1: recForm.ASP1||'', ASP2: recForm.ASP2||'',
+    D1: recForm.D1||'', D2: recForm.D2||'', D3: recForm.D3||'', D4: recForm.D4||'',
+    DSP1: recForm.DSP1||'', DSP2: recForm.DSP2||''
+  };
+  if(editingId){
+    matches = matches.map(function(m){ return m.id===editingId ? data : m; });
+  } else {
+    matches.unshift(data);
+  }
+  saveMatches(matches);
+  resetRecordForm();
+  updateSettingsCount();
+  runSearch(); // 検索結果を最新化
+  switchTab(editingId ? 'search' : 'record');
+  if(!editingId){
+    // 保存完了の簡易フィードバック
+    var btn = document.getElementById('rec-save');
+    var old = btn.textContent; btn.textContent='保存しました ✓';
+    setTimeout(function(){ btn.textContent = old; }, 1200);
+  }
+});
+
+// ---- 検索画面 ----
+buildSearchSlots();
+document.getElementById('s-clear').addEventListener('click', function(){
+  searchForm = {};
+  document.getElementById('s-opponent').value='';
+  document.getElementById('s-memo').value='';
+  refreshSlotUI('search');
+  runSearch();
+});
+document.getElementById('s-go').addEventListener('click', runSearch);
+
+function spSetOf(m){ return [m.DSP1, m.DSP2].filter(Boolean); }
+
+function matchFilter(m, f){
+  if(f.opponentName){
+    if((m.opponentName||'') !== f.opponentName) return false;
+  }
+  if(f.memo){
+    // 全角スペースで区切られた各キーワードをすべて含む（順不同）
+    var memoText = (m.memo||'').toLowerCase();
+    var words = f.memo.split('　').filter(function(w){ return w!==''; });
+    for(var k=0;k<words.length;k++){
+      if(memoText.indexOf(words[k].toLowerCase())<0) return false;
+    }
+  }
+  var normalSlots = ['D1','D2','D3','D4'];
+  for(var i=0;i<normalSlots.length;i++){
+    var s = normalSlots[i];
+    if(f[s] && m[s] !== f[s]) return false;
+  }
+  var spVals = [f.DSP1, f.DSP2].filter(Boolean);
+  if(spVals.length===2){
+    var mset = spSetOf(m).slice().sort().join('|');
+    var fset = spVals.slice().sort().join('|');
+    if(mset !== fset) return false;
+  } else if(spVals.length===1){
+    if(spSetOf(m).indexOf(spVals[0])<0) return false;
+  }
+  return true;
+}
+
+function runSearch(){
+  var f = {
+    opponentName: document.getElementById('s-opponent').value.trim(),
+    memo: document.getElementById('s-memo').value.trim(),
+    D1: searchForm.D1, D2: searchForm.D2, D3: searchForm.D3, D4: searchForm.D4,
+    DSP1: searchForm.DSP1, DSP2: searchForm.DSP2
+  };
+  var matches = loadMatches().filter(function(m){ return matchFilter(m, f); });
+  matches.sort(function(a,b){ return new Date(b.recordedAt)-new Date(a.recordedAt); });
+  renderResults(matches);
+}
+
+function fmtDate(iso){
+  var d = new Date(iso);
+  return d.getFullYear()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function formLine(prefix, m, slots){
+  return slots.map(function(s){ return m[s] || '—'; }).join(' / ');
+}
+
+function renderResults(list){
+  var el = document.getElementById('s-results');
+  el.innerHTML='';
+  if(list.length===0){
+    var e = document.createElement('div'); e.className='empty'; e.textContent='該当する対戦データがありません';
+    el.appendChild(e); return;
+  }
+  list.forEach(function(m){
+    var li = document.createElement('li');
+    li.className='result-item';
+    li.innerHTML =
+      '<div class="row1"><span class="opp">'+(m.opponentName||'（相手名なし）')+'</span>'+
+      '<span class="badge '+(m.result==='win'?'win':'lose')+'">'+(m.result==='win'?'勝利':'敗北')+'</span></div>'+
+      '<div class="date">'+fmtDate(m.recordedAt)+'</div>'+
+      '<div class="formline"><b>相手</b> '+formLine('D',m,SLOTS_D)+' ｜ SP '+formLine('DSP',m,SLOTS_DSP)+'</div>'+
+      '<div class="formline"><b>自分</b> '+formLine('A',m,SLOTS_A)+' ｜ SP '+formLine('ASP',m,SLOTS_ASP)+'</div>';
+    li.addEventListener('click', function(){ openDetail(m.id); });
+    el.appendChild(li);
+  });
+}
+
+// ---- 詳細画面 ----
+var detailId = null;
+function openDetail(id){
+  detailId = id;
+  var m = loadMatches().find(function(x){return x.id===id;});
+  if(!m) return;
+  var body = document.getElementById('detail-body');
+  body.innerHTML =
+    '<div class="detail-row"><span class="k">記録日時</span><span>'+fmtDate(m.recordedAt)+'</span></div>'+
+    '<div class="detail-row"><span class="k">相手プレイヤー名</span><span>'+(m.opponentName||'—')+'</span></div>'+
+    '<div class="detail-row"><span class="k">勝敗</span><span class="badge '+(m.result==='win'?'win':'lose')+'">'+(m.result==='win'?'勝利':'敗北')+'</span></div>'+
+    '<div class="detail-row"><span class="k">相手編成</span><span>'+formLine('D',m,SLOTS_D)+'</span></div>'+
+    '<div class="detail-row"><span class="k">相手SP</span><span>'+formLine('DSP',m,SLOTS_DSP)+'</span></div>'+
+    '<div class="detail-row"><span class="k">自分編成</span><span>'+formLine('A',m,SLOTS_A)+'</span></div>'+
+    '<div class="detail-row"><span class="k">自分SP</span><span>'+formLine('ASP',m,SLOTS_ASP)+'</span></div>'+
+    (m.memo ? '<div class="memo-box">'+m.memo.replace(/</g,'&lt;')+'</div>' : '');
+  document.getElementById('detail-overlay').classList.add('active');
+}
+document.getElementById('detail-close').addEventListener('click', function(){ document.getElementById('detail-overlay').classList.remove('active'); });
+document.getElementById('detail-delete').addEventListener('click', function(){
+  if(!detailId) return;
+  askDeleteMatch(detailId);
+});
+document.getElementById('detail-edit').addEventListener('click', function(){
+  var m = loadMatches().find(function(x){return x.id===detailId;});
+  if(!m) return;
+  editingId = m.id;
+  recForm = {A1:m.A1,A2:m.A2,A3:m.A3,A4:m.A4,ASP1:m.ASP1,ASP2:m.ASP2,D1:m.D1,D2:m.D2,D3:m.D3,D4:m.D4,DSP1:m.DSP1,DSP2:m.DSP2,_result:m.result};
+  document.getElementById('rec-opponent').value = m.opponentName||'';
+  document.getElementById('rec-memo').value = m.memo||'';
+  document.querySelectorAll('#rec-result button').forEach(function(b){ b.classList.toggle('on', b.dataset.r===m.result); });
+  document.getElementById('rec-save').textContent='変更を保存';
+  refreshSlotUI('rec');
+  document.getElementById('detail-overlay').classList.remove('active');
+  switchTab('record');
+});
+
+// ---- タブ切り替え ----
+function switchTab(name){
+  document.querySelectorAll('nav.tabs button').forEach(function(b){ b.classList.toggle('active', b.dataset.tab===name); });
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById('screen-'+name).classList.add('active');
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('nav.tabs button').forEach(function(b){
+  b.addEventListener('click', function(){ switchTab(b.dataset.tab); });
+});
+
+function updateSettingsCount(){
+  var n = loadMatches().length;
+  document.getElementById('settings-count').textContent = '記録済みの対戦：'+n+'件／登録生徒数：'+STUDENTS.length+'名';
+  renderManageList();
+  renderMatchManageList();
+}
+
+// ---- 生徒の管理（削除） ----
+var pendingDelete = null;
+function renderManageList(){
+  var q = document.getElementById('manage-search').value.trim();
+  var box = document.getElementById('manage-list'); box.innerHTML='';
+  var list = STUDENTS.filter(function(s){ return q==='' || s.name.indexOf(q)>=0; });
+  if(list.length===0){
+    var e = document.createElement('div'); e.className='empty'; e.textContent='該当する生徒がいません';
+    box.appendChild(e); return;
+  }
+  list.forEach(function(s){
+    var row = document.createElement('div'); row.className='manage-row';
+    var label = document.createElement('span');
+    label.innerHTML = s.name + '<small>' + (s.type==='special'?'Special':'Striker') + '</small>';
+    var btn = document.createElement('button'); btn.type='button'; btn.textContent='削除';
+    btn.addEventListener('click', function(){
+      pendingDelete = {kind:'student', name:s.name};
+      openConfirm('生徒を削除しますか？', '「'+s.name+'」を生徒一覧から削除します。過去の対戦記録は変更されません。');
+    });
+    row.appendChild(label); row.appendChild(btn); box.appendChild(row);
+  });
+}
+document.getElementById('manage-search').addEventListener('input', renderManageList);
+function openConfirm(title, text){
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-text').textContent = text;
+  document.getElementById('confirm-overlay').classList.add('active');
+}
+function matchLabel(m){
+  return fmtDate(m.recordedAt)+' '+(m.opponentName||'（相手名なし）');
+}
+function renderMatchManageList(){
+  var q = document.getElementById('match-manage-search').value.trim().toLowerCase();
+  var box = document.getElementById('match-manage-list'); box.innerHTML='';
+  var list = loadMatches().filter(function(m){
+    return q==='' || (m.opponentName||'').toLowerCase().indexOf(q)>=0;
+  }).sort(function(a,b){ return new Date(b.recordedAt)-new Date(a.recordedAt); });
+  if(list.length===0){
+    var e = document.createElement('div'); e.className='empty'; e.textContent='該当する対戦データがありません';
+    box.appendChild(e); return;
+  }
+  list.forEach(function(m){
+    var row = document.createElement('div'); row.className='manage-row';
+    var label = document.createElement('span');
+    label.textContent = matchLabel(m);
+    var badge = document.createElement('small');
+    badge.textContent = m.result==='win' ? '勝利' : '敗北';
+    label.appendChild(badge);
+    var btn = document.createElement('button'); btn.type='button'; btn.textContent='削除';
+    btn.addEventListener('click', function(){ askDeleteMatch(m.id); });
+    row.appendChild(label); row.appendChild(btn); box.appendChild(row);
+  });
+}
+function askDeleteMatch(id){
+  var m = loadMatches().find(function(x){return x.id===id;});
+  if(!m) return;
+  pendingDelete = {kind:'match', id:id};
+  openConfirm('対戦データを削除しますか？', '「'+matchLabel(m)+'」の対戦データを削除します。この操作は取り消せません。');
+}
+document.getElementById('match-manage-search').addEventListener('input', renderMatchManageList);
+document.getElementById('confirm-cancel').addEventListener('click', function(){
+  pendingDelete = null;
+  document.getElementById('confirm-overlay').classList.remove('active');
+});
+document.getElementById('confirm-ok').addEventListener('click', function(){
+  if(pendingDelete){
+    if(pendingDelete.kind==='student'){
+      deleteStudent(pendingDelete.name);
+    } else if(pendingDelete.kind==='match'){
+      saveMatches(loadMatches().filter(function(m){return m.id!==pendingDelete.id;}));
+      document.getElementById('detail-overlay').classList.remove('active');
+      runSearch();
+    }
+    updateSettingsCount();
+  }
+  pendingDelete = null;
+  document.getElementById('confirm-overlay').classList.remove('active');
+});
+
+// ---- 初期化 ----
+updateSettingsCount();
+runSearch();
+
+
+})();
+</script>
+</body>
+</html>
